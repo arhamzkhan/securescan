@@ -22,10 +22,16 @@ export default function App() {
     setError(null);
     try {
       const res = await fetch(`/api/scans/${id}`);
-      if (!res.ok) {
-        throw new Error('Stored audit report not found.');
+      const contentType = res.headers.get('content-type') || '';
+      
+      if (!contentType.includes('application/json')) {
+        throw new Error(`Failed to load audit report (Status ${res.status}). Server returned invalid response format.`);
       }
+
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Stored audit report not found.');
+      }
       setCurrentScan(data);
     } catch (err) {
       setError(err.message);
@@ -45,6 +51,11 @@ export default function App() {
         },
         body: JSON.stringify({ url }),
       });
+
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error(`Failed to process audit (Status ${res.status}). Server returned invalid response format.`);
+      }
 
       const data = await res.json();
 
